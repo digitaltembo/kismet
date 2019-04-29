@@ -1,0 +1,15 @@
+:global(body) {
+  position: relative;
+
+  .closeButton { 
+    font-size:2em;
+    cursor: pointer;
+    color: rgba(0, 0, 0, 0.87);
+    padding:20px 10px 10px 20px;
+  }
+  .menu-icon { 
+    margin-right:1em;
+  }
+
+
+}
