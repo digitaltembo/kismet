@@ -21,6 +21,15 @@ export function create_user(email, password) {
     });
 }
 
+export function create_league_and_user(league_name, name, email, password) {
+    return axios.post('/api/league/create_league_and_user', {
+        league_name,
+        name,
+        email,
+        password,
+    });
+}
+
 export function get_token(email, password) {
     return axios.post('/api/get_token', {
         email,

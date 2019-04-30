@@ -21,7 +21,7 @@ class NotFound extends React.Component { // eslint-disable-line react/prefer-sta
     render() {
         return (
             <div className="col-md-8">
-                <h1>Not Found</h1>
+                <h1>Not Found :(</h1>
             </div>
         );
     }

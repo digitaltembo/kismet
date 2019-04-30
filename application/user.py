@@ -38,25 +38,44 @@ def get_user(id):
 @requires_league_admin_auth
 def add_user():
     incoming = request.get_json()
-    if league.can_have_another_user(g.current_user.league):
+
+    (success, result) =  add_user_to_league(email=incoming["email"], name=incoming["name"], league = g.current_user.league)
+    if success:
+        return jsonify(result="success", user=result.to_dict())
+    else:
+        return result
+
+@app.route("/api/reset_password", methods=["POST"])
+@requires_league_admin_auth
+def reset_password():
+    incoming = request.get_json()
+
+    user = User.query.filter(league_id = g.current_user["league_id"], id=incoming["id"]).first()
+    user.password = ""
+    db.session.add(user)
+    db.session.commit()
+    return jsonify(result="success", user=result.to_dict())
+
+def add_user_to_league(email, name, league):
+    if league.current_users < league.allowed_users:
         user = User(
-            email=incoming["email"],
+            email=email,
+            name=name,
             password='',
-            league=g.current_user.league
+            league=league
         )
         user.password='' #it would be impossible to change this otherwise
         db.session.add(user)
+        init_stat(user)
 
         try:
             db.session.commit()
         except IntegrityError:
-            return jsonify(message="Cannot add user"), 409
+            return (False, (jsonify(result="error", message="Cannot add user"), 409))
 
-        return jsonify(
-            id=user.id
-        )
+        return (True, user)
     else:
-        return jsonify(result="BILLING NEEDED")
+        return (False, jsonify(result="BILLING NEEDED"))
 
 @app.route("/api/create_user", methods=["POST"])
 def create_user():
@@ -64,7 +83,6 @@ def create_user():
     user = User.query.filter_by(email=incoming["email"], password="").first()
     if user:
         user.password = User.hashed_password(incoming["password"])
-        init_stat(user)
 
         try:
             db.session.commit()
@@ -72,6 +90,7 @@ def create_user():
             return jsonify(message="Cannot add user"), 409
 
         return jsonify(
+            result="success",
             id=user.id,
             token=generate_token(user)
         )

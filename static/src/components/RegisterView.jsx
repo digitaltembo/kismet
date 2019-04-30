@@ -5,6 +5,7 @@ import { bindActionCreators } from 'redux';
 import { connect } from 'react-redux';
 import TextField from 'material-ui/TextField';
 import RaisedButton from 'material-ui/RaisedButton';
+import Toggle from 'material-ui/Toggle';
 import Paper from 'material-ui/Paper';
 
 import * as actionCreators from '../actions/auth';
@@ -39,11 +40,14 @@ export default class RegisterView extends React.Component {
         const redirectRoute = '/login';
         this.state = {
             email: '',
+            name:'',
             password: '',
             email_error_text: null,
             password_error_text: null,
             redirectTo: redirectRoute,
             disabled: true,
+            league_exists:true,
+            league_name:''
         };
     }
 
@@ -83,7 +87,9 @@ export default class RegisterView extends React.Component {
 
         }
 
-        if (email_is_valid && password_is_valid) {
+        const leage_valid = this.state.league_exists || ( this.state.league_name != '' && this.state.name != '')
+
+        if (email_is_valid && password_is_valid && league_valid) {
             this.setState({
                 disabled: false,
             });
@@ -108,17 +114,25 @@ export default class RegisterView extends React.Component {
         }
     }
 
-    login(e) {
+    submit(e) {
         e.preventDefault();
-        this.props.registerUser(this.state.email, this.state.password, this.state.redirectTo);
+        const {email, password, name, redirectTo, league_exists, league_name} = this.state;
+        if(league_exists){
+            this.props.registerUser(email, password);
+        } else {
+            this.props.registerLeagueAndUser(league_name, name, email, password);
+        }
+
     }
 
     render() {
+        const {league_exists} = this.state;
+
         return (
             <div className="col-md-6 col-md-offset-3" onKeyPress={(e) => this._handleKeyPress(e)}>
                 <Paper style={style}>
                     <div className="text-center">
-                        <h2>Register to view protected content!</h2>
+                        <h2>Register!</h2>
                         {
                             this.props.registerStatusText &&
                                 <div className="alert alert-info">
@@ -126,6 +140,35 @@ export default class RegisterView extends React.Component {
                                 </div>
                         }
 
+                        <div className="col-md-12">
+                            <Toggle 
+                                toggled={league_exists} 
+                                labelPosition="right"
+                                label={ (league_exists) ? "Register Myself (invitation needed)" : "Register And Create League" }
+                                onToggle={() => this.setState({league_exists:!league_exists})}
+                            />
+                        </div>
+                        { 
+                            (!this.state.league_exists) &&
+                            <div>
+                                <div className="col-md-12">
+                                    <TextField
+                                      hintText="League Name"
+                                      floatingLabelText="Name your League"
+                                      type="text"
+                                      onChange={(e) => this.changeValue(e, 'league_name')}
+                                    />
+                                </div>
+                                <div className="col-md-12">
+                                    <TextField
+                                      hintText="Name"
+                                      floatingLabelText="Your Name"
+                                      type="text"
+                                      onChange={(e) => this.changeValue(e, 'name')}
+                                    />
+                                </div>
+                            </div>
+                        }
                         <div className="col-md-12">
                             <TextField
                               hintText="Email"
@@ -144,12 +187,11 @@ export default class RegisterView extends React.Component {
                               onChange={(e) => this.changeValue(e, 'password')}
                             />
                         </div>
-
                         <RaisedButton
                           disabled={this.state.disabled}
                           style={{ marginTop: 50 }}
                           label="Submit"
-                          onClick={(e) => this.login(e)}
+                          onClick={(e) => this.submit(e)}
                         />
 
                     </div>

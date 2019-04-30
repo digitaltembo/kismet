@@ -112,6 +112,7 @@ def init_stat(user):
         time=datetime.datetime.now()
     )
     db.session.add(new_stat)
+    db.session.commit()
     user.current_stat_id = new_stat.id
     db.session.add(user)
     db.session.commit()

@@ -2,7 +2,8 @@ from flask import request, render_template, jsonify, url_for, redirect, g
 from .models import League, Season, User
 from index import app, db
 from sqlalchemy.exc import IntegrityError
-from .utils.auth import requires_auth, requires_admin_auth
+from .utils.auth import requires_auth, requires_admin_auth, generate_token
+from .user import add_user_to_league
 import datetime
 
 @app.route("/api/my/league", methods=["GET"])
@@ -10,10 +11,19 @@ import datetime
 def my_league():
     return g.current_user.to_dict()
 
-@app.route("/api/league/create")
+@app.route("/api/league/create_league_and_user", methods=["POST"])
 def create_league():
+    incoming = request.get_json(force=True)
+
+    print(request)
+    print(incoming)
+    league_name=incoming["league_name"]
+    person_name=incoming["name"]
+    email=incoming["email"]
+    password=incoming["password"]
+
     new_league = League(
-        request.args.get("name"),
+        league_name,
         datetime.datetime.now(),
         5,
         0,
@@ -30,17 +40,25 @@ def create_league():
     )
     db.session.add(new_season)
     new_league.current_season = new_season.id
-    db.session.commit()
 
+    (success, user) = add_user_to_league(email, person_name, new_league)
+    if success:
+        user.password = User.hashed_password(password)
+        db.session.commit()
 
-    return jsonify(new_league.to_dict())
+        return jsonify(
+            id=user.id,
+            token=generate_token(user)
+        )
+    else:
+        return user
 
 @app.route("/api/league/players", methods=["GET"])
 @requires_auth
 def get_leaderboard():
     my_user = User.query.get(g.current_user["id"])
 
-    users = [merge(user.current_stat.to_dict(), user.to_dict()) for user in my_user.league.users]
+    users = [merge(user.current_stat.to_dict(), user.to_dict()) for user in my_user.league.users if user.current_stat_id]
 
     return jsonify(
         users
@@ -71,8 +89,6 @@ def update_monthly_cycle(league):
 def can_have_another_game(league):
     return update_monthly_cycle(league) and league.current_monthly_games < league.allowed_monthly_games
 
-def can_have_another_user(league):
-    return league.current_users < league.allowed_users
 
 
 

@@ -31,11 +31,11 @@ class User(db.Model):
     def __init__(self, email, password, name, league, is_league_admin=False, is_superuser=False, profile_pic="", ):
         self.email = email
         self.name = name
-        self.active = True
         self.password = User.hashed_password(password)
         self.is_league_admin = is_league_admin
         self.is_superuser = is_superuser
         self.profile_pic = profile_pic
+        self.league = league
 
     def to_dict(self):
         return {
@@ -63,7 +63,7 @@ class User(db.Model):
 
 class League(db.Model):
     id = db.Column(db.Integer(), primary_key=True)
-    name = db.Column(db.String(255), unique=True)
+    name = db.Column(db.String(255))
     current_season_id = db.Column(db.Integer(), db.ForeignKey('season.id'))
 
     month_start = db.Column(db.DateTime())
@@ -102,7 +102,7 @@ class League(db.Model):
 class Season(db.Model):
     id = db.Column(db.Integer(), primary_key=True)
     league_id = db.Column(db.Integer(), db.ForeignKey('league.id'))
-    name = db.Column(db.String(255), unique=True)
+    name = db.Column(db.String(255))
     start = db.Column(db.DateTime())
     end = db.Column(db.DateTime())
 
@@ -141,7 +141,7 @@ class Game(db.Model):
     stats = db.relationship('Stat', back_populates='game')
 
 
-    def __init__(self, league, winner, loser, winner_score, loser_score):
+    def __init__(self, league, season, winner, loser, winner_score, loser_score):
         self.league=league
         self.winner = winner 
         self.loser = loser 

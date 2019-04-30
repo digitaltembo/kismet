@@ -207,7 +207,7 @@ export default class Record extends React.Component { // eslint-disable-line rea
                             </div>
                             <div className="col-md-6">
                                 { 
-                                <div>
+                                <div className="text-center" style={{margin:"18px"}}>
                                     <RaisedButton label="Record Match" onClick={this.handleSubmit} disabled={!(aScore && bScore)} />
                                     {
                                         (aScore && bScore) &&

@@ -11,7 +11,7 @@ import {
 } from '../constants/index';
 
 import { parseJSON } from '../utils/misc';
-import { get_token, create_user } from '../utils/http_functions';
+import { get_token, create_user, create_league_and_user } from '../utils/http_functions';
 
 
 export function loginUserSuccess(token) {
@@ -124,6 +124,36 @@ export function registerUser(email, password) {
     return function (dispatch) {
         dispatch(registerUserRequest());
         return create_user(email, password)
+            .then(parseJSON)
+            .then(response => {
+                try {
+                    dispatch(registerUserSuccess(response.token));
+                    browserHistory.push('/leaderboard');
+                } catch (e) {
+                    dispatch(registerUserFailure({
+                        response: {
+                            status: 403,
+                            statusText: 'Invalid token',
+                        },
+                    }));
+                }
+            })
+            .catch(error => {
+                dispatch(registerUserFailure({
+                    response: {
+                        status: 403,
+                        statusText: 'User with that email already exists',
+                    },
+                }
+                ));
+            });
+    };
+}
+
+export function registerLeagueAndUser(league_name, name, email, password) {
+    return function (dispatch) {
+        dispatch(registerUserRequest());
+        return create_league_and_user(league_name, name, email, password)
             .then(parseJSON)
             .then(response => {
                 try {
