@@ -40,6 +40,7 @@ def create_league():
     )
     db.session.add(new_season)
     new_league.current_season = new_season.id
+    db.session.add(new_season)
 
     (success, user) = add_user_to_league(email, person_name, new_league)
     if success:

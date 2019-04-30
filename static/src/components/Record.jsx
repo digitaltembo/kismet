@@ -30,7 +30,7 @@ import RaisedButton from 'material-ui/RaisedButton';
 const Player = ({player, rank}) => {
     return (
         <Card>
-            <CardHeader title={player.name} avatar={ (player.profile_pic) ? player.profile_pic : "pong.png" } />
+            <CardHeader title={player.name} avatar={ (player.profile_pic) ? player.profile_pic : "static/pong.png" } />
             <CardText>
                 <p>Rank: {rank}</p>
                 <p>ELO: {player.elo}</p>

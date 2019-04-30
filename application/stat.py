@@ -96,6 +96,8 @@ def stat_update(game):
     db.session.add(new_loser_stat)
 
     game.loser.current_stat = new_loser_stat
+    db.session.add(game.winner)
+    db.session.add(game.loser)
 
     db.session.commit()
 

@@ -4,7 +4,7 @@ from setup import basedir
 
 
 class BaseConfig(object):
-    SECRET_KEY = "SO_SECURE"
+    SECRET_KEY = os.environ['KISMET_SECRET'] if 'KISMET_SECRET' in os.environ else 'SO_SECRET'
     DEBUG = True
     SQLALCHEMY_DATABASE_URI = os.environ['DATABASE_URL']
     SQLALCHEMY_TRACK_MODIFICATIONS = True

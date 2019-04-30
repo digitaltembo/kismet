@@ -28,6 +28,7 @@ def record_game():
 
         game = Game(
             the_league,
+            the_league.current_season,
             winner,
             loser,
             winner_score,
