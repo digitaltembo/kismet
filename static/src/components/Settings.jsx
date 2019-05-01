@@ -15,7 +15,7 @@ import FlatButton from 'material-ui/FlatButton';
 import RaisedButton from 'material-ui/RaisedButton';
 import TextField from 'material-ui/TextField';
 
-import { get_users, update_user, delete_user, approve_user, remove_user_approval } from '../utils/http_functions';
+import { get_users, delete_user, approve_user, remove_user_approval } from '../utils/http_functions';
 import { parseJSON } from '../utils/misc';
 
 function mapStateToProps(state) {
@@ -36,7 +36,13 @@ class Settings extends React.Component { // eslint-disable-line react/prefer-sta
         super();
         this.state = { 
             name :'', 
-            email : ''
+            email : '',
+            password: '',
+            password_confirmation: '',
+            password_error: '',
+            password_confirmation_error:'',
+            new_name: '',
+            new_email: ''
         };
     }
 
@@ -108,6 +114,42 @@ class Settings extends React.Component { // eslint-disable-line react/prefer-sta
             });
     }
 
+
+    updatePassword = (password) => {
+        if(password.length > 0){
+            if(password.length < 6){
+                this.setState({password_error:'Too short', password: password});
+            } else {
+                this.setState({password_error:'', password: password});
+            }
+            if(password !== this.state.password_confirmation){
+                this.setState({password_confirmation_error: 'Passwords do not match'});
+            }
+        } else {
+            this.setState({password_error:'', password: password, password_confirmation_error:''});
+        }
+    };
+
+    updatePasswordConfirmation = (password) => {
+        if(this.state.password.length > 0 && this.state.password !== password){
+            this.setState({password_confirmation: password, password_confirmation_error:'Passwords do not match'});
+        } else {
+            this.setState({password_confirmation: password, password_confirmation_error:''});
+        }
+    }
+
+    updateUser = () => {
+        const {email, name, password} = this.state;
+        const user_id = this.props.user.id;
+        this.props.editUser(this.props.token, {email, name, password, id: user_id});
+    }
+
+    addUser = () => {
+        this.props.addUser(this.props.token, {email: this.state.new_email, name: this.state.new_name});
+    };
+
+
+
     render() {
         const {is_superuser, is_league_admin, name, email} = this.props.user;
         const user_id = this.props.user.id;
@@ -118,20 +160,69 @@ class Settings extends React.Component { // eslint-disable-line react/prefer-sta
                     <TextField
                         className="menu-icon"
                         floatingLabelText="Email"
-                        himt="for@example.com"
+                        hint="for@example.com"
                         value={this.state.email}
                         onChange={(event, newValue) => this.setState({email: newValue})}
                     />
                     <TextField
                         floatingLabelText="Name"
-                        himt="John 'Pongman' Smith"
+                        hint="John 'Pongman' Smith"
                         value={this.state.name}
                         onChange={(event, newValue) => this.setState({name: newValue})}
+                    /> <br />
+
+                    <TextField
+                        className="menu-icon"
+                        floatingLabelText="Update Password (optional)"
+                        type="password"
+                        value={this.state.password}
+                        onChange={(event, newValue) => this.updatePassword(newValue)}
+                        errorText={this.state.password_error}
                     />
+                    <TextField
+                        floatingLabelText="Confirm Password"
+                        type="password"
+
+                        value={this.state.password_confirmation}
+                        onChange={(event, newValue) => this.updatePasswordConfirmation(newValue)}
+                        errorText={this.state.password_confirmation_error}
+                    /> <br />
+
                     <RaisedButton
                         label="Edit"
+                        disabled={this.state.password_confirmation_error || this.state.password_error}
+                        onClick={() => this.updateUser()}
                     />
                 </Paper>
+                <br />
+                { 
+                    (is_league_admin) && 
+
+                    <Paper className="with-padding">
+                        Add User? <br/>
+                        <TextField
+                            className="menu-icon"
+                            floatingLabelText="Email"
+                            hint="for@example.com"
+                            value={this.state.new_email}
+                            onChange={(event, newValue) => this.setState({new_email: newValue})}
+                        />
+                        <TextField
+                            floatingLabelText="Name"
+                            hint="John 'Pongman' Smith"
+                            value={this.state.new_name}
+                            onChange={(event, newValue) => this.setState({new_name: newValue})}
+                        /> <br />
+
+                        <RaisedButton
+                            label="Add"
+                            disabled={this.state.new_email == '' || this.state.new_name == ''}
+                            onClick={() => this.addUser()}
+                        />
+                    </Paper>
+                }
+
+
             </div>
         );
     }

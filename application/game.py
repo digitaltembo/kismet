@@ -5,6 +5,7 @@ from sqlalchemy.exc import IntegrityError
 from .utils.auth import requires_auth, requires_admin_auth
 from .league import can_have_another_game
 from .stat import stat_update
+import datetime
 
 @app.route("/api/game/record", methods=["POST"])
 @requires_auth
@@ -32,7 +33,8 @@ def record_game():
             winner,
             loser,
             winner_score,
-            loser_score
+            loser_score,
+            datetime.datetime.now()
         )
         db.session.commit()
         stat_update(game)

@@ -1,6 +1,6 @@
-import { RECEIVED_PLAYERS, FETCH_PLAYERS, RECORDED_GAME, RECEIVED_GAMES } from '../constants/index';
+import { RECEIVED_PLAYERS, FETCH_PLAYERS, RECORDED_GAME, RECEIVED_GAMES, ADDED_USER, EDITED_USER, RECEIVED_STATS } from '../constants/index';
 import { parseJSON } from '../utils/misc';
-import { get_players, record_game, get_games } from '../utils/http_functions';
+import { get_players, record_game, get_games, update_user, add_user, get_stats} from '../utils/http_functions';
 import { logoutAndRedirect } from './auth';
 
 export function receivePlayers(data) {
@@ -16,6 +16,14 @@ export function receivePlayers(data) {
 export function receiveGames(data) {
     return {
         type: RECEIVED_GAMES,
+        payload: {
+            data,
+        },
+    };
+}
+export function receiveStats(data) {
+    return {
+        type: RECEIVED_STATS,
         payload: {
             data,
         },
@@ -67,3 +75,51 @@ export function getGames(token) {
             });
     };
 }
+
+export function getStats(token) {
+    return (dispatch) => {
+        get_stats(token)
+            .then(parseJSON)
+            .then(response => {
+                dispatch(receiveStats(response));
+            });
+    };
+}
+
+
+
+export function userEdited(payload) {
+    return {
+        type: EDITED_USER,
+        payload: payload
+    };
+}
+
+export function editUser(token, user) {
+    return (dispatch) => {
+        update_user(token, user)
+            .then(parseJSON)
+            .then(response => {
+                dispatch(userEdited(response));
+            });
+    };
+}
+
+export function userAdded(payload) {
+    return {
+        type: ADDED_USER,
+        payload: payload
+    };
+}
+
+export function addUser(token, user) {
+    return (dispatch) => {
+        add_user(token, user)
+            .then(parseJSON)
+            .then(response => {
+                dispatch(userAdded(response));
+            });
+    };
+}
+
+

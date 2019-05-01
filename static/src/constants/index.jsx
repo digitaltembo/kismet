@@ -13,6 +13,10 @@ export const RECEIVE_PROTECTED_DATA = 'RECEIVE_PROTECTED_DATA';
 
 export const RECEIVED_PLAYERS = 'RECEIVED_PLAYERS';
 export const RECEIVED_GAMES   = 'RECEIVED_GAMES';
+export const RECEIVED_STATS   = 'RECEIVED_STATS';
 
 export const FETCH_PLAYERS    = 'FETCH_PLAYERS';
 export const RECORDED_GAME    = 'RECORDED_GAME';
+
+export const EDITED_USER      = 'EDITED_USER';
+export const ADDED_USER      = 'ADDED_USER';

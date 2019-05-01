@@ -36,7 +36,6 @@ class EloSimulation:
 def compare():
     playerAId = int(request.args.get("playerA"))
     playerBId = int(request.args.get("playerB"))
-    print(g.current_user)
     playerA = User.query.filter_by(league_id=g.current_user["league_id"], id=playerAId).first()
     playerB = User.query.filter_by(league_id=g.current_user["league_id"], id=playerBId).first()
 
@@ -120,3 +119,8 @@ def init_stat(user):
     db.session.commit()
 
 
+@app.route("/api/stat/list", methods=["GET"])
+@requires_auth
+def list_stats():
+    stats = Stat.query.filter_by(league_id=g.current_user["league_id"]).all()
+    return jsonify([stat.to_dict() for stat in stats]), 200

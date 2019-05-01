@@ -14,9 +14,6 @@ def my_league():
 @app.route("/api/league/create_league_and_user", methods=["POST"])
 def create_league():
     incoming = request.get_json(force=True)
-
-    print(request)
-    print(incoming)
     league_name=incoming["league_name"]
     person_name=incoming["name"]
     email=incoming["email"]
@@ -39,12 +36,14 @@ def create_league():
         datetime.datetime.now()
     )
     db.session.add(new_season)
-    new_league.current_season = new_season.id
-    db.session.add(new_season)
+    db.session.commit()
+    new_league.current_season_id = new_season.id
+    db.session.add(new_league)
 
     (success, user) = add_user_to_league(email, person_name, new_league)
     if success:
         user.password = User.hashed_password(password)
+        user.is_league_admin = True
         db.session.commit()
 
         return jsonify(

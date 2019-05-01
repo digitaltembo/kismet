@@ -27,7 +27,6 @@ def requires_auth(f, further_conditions=[]):
     def decorated(*args, **kwargs):
         token = request.headers.get('Authorization', None)
         if token:
-            print(token)
             string_token = token.encode('ascii', 'ignore')
             user = verify_token(string_token)
             if user and (len(further_conditions) == 0 or any([f(user, request) for f in further_conditions])):

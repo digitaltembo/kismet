@@ -17,7 +17,7 @@ import TextField from 'material-ui/TextField';
 import SelectField from 'material-ui/SelectField';
 import MenuItem from 'material-ui/MenuItem';
 import Paper from 'material-ui/Paper';
-
+import { Pie } from 'react-chartjs-2';
 
 import { compare_players } from '../utils/http_functions';
 import { parseJSON } from '../utils/misc';
@@ -98,6 +98,24 @@ export default class Record extends React.Component { // eslint-disable-line rea
         this.setState({simulation: {}});
         this.handleCancel();
     }
+
+
+    getPieData = (name1, wins1, name2, wins2) => {
+        return {
+            datasets: [{
+                data: [wins1, wins2],
+                backgroundColor: [
+                    '#FF6384',
+                    '#36A2EB'
+                ],
+                hoverBackgroundColor: [
+                    '#FF6384',
+                    '#36A2EB'
+                ]
+            }],
+            labels: [name1, name2]
+        };
+    };
 
 
     render() {
@@ -289,6 +307,14 @@ export default class Record extends React.Component { // eslint-disable-line rea
                                                         <div>
                                                             {playerA.name} has won {simulationResult[0].wins} games, 
                                                             while {playerB.name} has won {simulationResult[1].wins} games.
+                                                            <Pie 
+                                                                data={this.getPieData(
+                                                                    playerA.name,
+                                                                    simulationResult[0].wins, 
+                                                                    playerB.name, 
+                                                                    simulationResult[1].wins
+                                                                )}
+                                                            />
                                                         </div>
                                                     )
                                             }

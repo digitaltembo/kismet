@@ -15,7 +15,7 @@ export function validate_token(token) {
 }
 
 export function create_user(email, password) {
-    return axios.post('/api/create_user', {
+    return axios.post('/api/user/register', {
         email,
         password,
     });
@@ -47,6 +47,9 @@ export function get_players(token) {
 export function get_games(token) {
     return axios.get('/api/game/list', tokenConfig(token));
 }
+export function get_stats(token) {
+    return axios.get('/api/stat/list', tokenConfig(token));
+}
 export function compare_players(token, aId, bId) {
     return axios.get('/api/stat/compare', {...tokenConfig(token), "params": {"playerA": aId, "playerB": bId}});
 }
@@ -54,11 +57,16 @@ export function record_game(token, payload) {
     return axios.post('/api/game/record', payload, tokenConfig(token)) ;
 }
 
-
-
-export function get_books(token) {
-    return axios.get('/api/book/list', tokenConfig(token));
+export function update_user(token, user) {
+    return axios.post('/api/user/update', user, tokenConfig(token));
 }
+
+export function add_user(token, user) {
+    return axios.post('/api/user/add', user, tokenConfig(token));
+}
+
+
+
 export function get_book_authors(token) {
     return axios.get('/api/book/list/authors', tokenConfig(token));
 }
@@ -83,9 +91,6 @@ export function get_movies(token) {
 
 export function get_users(token) {
     return axios.get('/api/user/list', tokenConfig(token));
-}
-export function update_user(token, user) {
-    return axios.post('/api/user/update', user, tokenConfig(token));
 }
 export function delete_user(token, user) {
     return axios.delete('/api/user/delete', {params:{id:user.id}, ...tokenConfig(token)});

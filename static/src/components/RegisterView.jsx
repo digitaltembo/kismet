@@ -87,7 +87,7 @@ export default class RegisterView extends React.Component {
 
         }
 
-        const leage_valid = this.state.league_exists || ( this.state.league_name != '' && this.state.name != '')
+        const league_valid = this.state.league_exists || ( this.state.league_name != '' && this.state.name != '');
 
         if (email_is_valid && password_is_valid && league_valid) {
             this.setState({

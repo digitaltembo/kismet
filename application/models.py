@@ -1,7 +1,7 @@
 from index import db
 from werkzeug.security import generate_password_hash, check_password_hash
 import pickle
-
+import time
 
 from sqlalchemy.ext.declarative import declarative_base
 
@@ -141,12 +141,14 @@ class Game(db.Model):
     stats = db.relationship('Stat', back_populates='game')
 
 
-    def __init__(self, league, season, winner, loser, winner_score, loser_score):
+    def __init__(self, league, season, winner, loser, winner_score, loser_score, time):
         self.league=league
+        self.season=season
         self.winner = winner 
         self.loser = loser 
         self.winner_score = winner_score
         self.loser_score = loser_score
+        self.time = time
 
     def to_dict(self):
         return {
@@ -157,7 +159,7 @@ class Game(db.Model):
             "loser": self.loser.to_dict(),
             "winner_score": self.winner_score,
             "loser_score": self.loser_score,
-            "time": str(self.time)
+            "time": time.mktime(self.time.timetuple()) if self.time else None
         }
 
 
@@ -193,11 +195,12 @@ class Stat(db.Model):
     def to_dict(self):
         return {
             "id":           self.id,
+            "user_id":      self.user_id,
             "elo":          int(self.elo),
             "wins":         self.wins,
             "losses":       self.losses,
             "total_points": self.total_points,
-            "time":         self.time
+            "time":         time.mktime(self.time.timetuple()) if self.time else None
         }
 
 

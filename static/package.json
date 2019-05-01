@@ -116,5 +116,11 @@
     "webpack-merge": "^1.0.2",
     "yargs": "^6.5.0"
   },
-  "dependencies": {}
+  "dependencies": {
+    "chart.js": "^2.8.0",
+    "moment": "^2.24.0",
+    "randomcolor": "^0.5.4",
+    "react-chartjs": "^1.2.0",
+    "react-chartjs-2": "^2.7.6"
+  }
 }

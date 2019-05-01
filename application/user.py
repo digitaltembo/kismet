@@ -1,5 +1,5 @@
 from flask import request, render_template, jsonify, url_for, redirect, g
-from .models import User
+from .models import User, League
 from index import app, db
 from sqlalchemy.exc import IntegrityError
 from .utils.auth import generate_token, requires_auth, requires_league_admin_auth, verify_token
@@ -34,18 +34,18 @@ def get_user(id):
         return jsonify(result="failure", message="Poorly formed request"), 409
 
 
-@app.route("/api/add_user", methods=["POST"])
+@app.route("/api/user/add", methods=["POST"])
 @requires_league_admin_auth
 def add_user():
     incoming = request.get_json()
-
-    (success, result) =  add_user_to_league(email=incoming["email"], name=incoming["name"], league = g.current_user.league)
+    league = League.query.get(int(g.current_user["league_id"]))
+    (success, result) =  add_user_to_league(email=incoming["email"], name=incoming["name"], league = league)
     if success:
         return jsonify(result="success", user=result.to_dict())
     else:
         return result
 
-@app.route("/api/reset_password", methods=["POST"])
+@app.route("/api/user/reset_password", methods=["POST"])
 @requires_league_admin_auth
 def reset_password():
     incoming = request.get_json()
@@ -66,6 +66,7 @@ def add_user_to_league(email, name, league):
         )
         user.password='' #it would be impossible to change this otherwise
         db.session.add(user)
+        league.current_users += 1
         init_stat(user)
 
         try:
@@ -77,8 +78,8 @@ def add_user_to_league(email, name, league):
     else:
         return (False, jsonify(result="BILLING NEEDED"))
 
-@app.route("/api/create_user", methods=["POST"])
-def create_user():
+@app.route("/api/user/register", methods=["POST"])
+def register_user():
     incoming = request.get_json()
     user = User.query.filter_by(email=incoming["email"], password="").first()
     if user:
@@ -134,25 +135,24 @@ def list_users():
 @app.route("/api/user/update", methods=["POST"])
 @requires_auth
 def update_user():
+    incoming = request.get_json(force=True)
     user_id = int(incoming["id"])
-    if user_id != g.current_user.id and not g.current_user.is_superuser and not g.current_user.is_league_admin:
+    if user_id != g.current_user['id'] and not g.current_user['is_superuser'] and not g.current_user['is_league_admin']:
         return jsonify(result="failure", message="Not Authorized"), 401
 
     user = User.query.get(user_id)
-    if g.current_user.is_league_admin and not g.current_user.is_superuser and user.league != g.current_user.league:
+    if g.current_user['is_league_admin'] and not g.current_user['is_superuser'] and user.league_id != g.current_user['league_id']:
         return jsonify(result="failure", message="Not Authorized"), 401
-
-    incoming = request.get_json()
     
     user.email = incoming["email"]
     user.name = incoming["name"]
     if "password" in incoming and incoming["password"] != None:
         user.password = User.hashed_password(incoming["password"])
 
-    if g.current_user.is_league_admin and "is_league_admin" in incoming and incoming["is_league_admin"] != None:
-        user.is_admin = incoming["is_admin"]
-    if g.current_user.is_superuser and "is_league_admin" in incoming and incoming["is_league_admin"] != None:
-        user.is_admin = incoming["is_admin"]
+    if g.current_user['is_league_admin'] and "is_league_admin" in incoming and incoming["is_league_admin"] != None:
+        user.is_league_admin = incoming["is_league_admin"]
+    if g.current_user['is_superuser'] and "is_league_admin" in incoming and incoming["is_league_admin"] != None:
+        user.is_superuser = incoming["is_superuser"]
     db.session.commit()
     return jsonify(user.to_dict()), 200
 
