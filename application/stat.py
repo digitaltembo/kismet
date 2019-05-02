@@ -99,6 +99,7 @@ def stat_update(game):
     db.session.add(game.loser)
 
     db.session.commit()
+    return (new_winner_stat, new_loser_stat)
 
 def init_stat(user):
     new_stat = Stat(

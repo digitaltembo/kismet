@@ -37,8 +37,15 @@ def record_game():
             datetime.datetime.now()
         )
         db.session.commit()
-        stat_update(game)
-        return jsonify(result="success")
+        winner_stat, loser_stat = stat_update(game)
+        return jsonify(
+            result="success", 
+            game=game.to_dict(), 
+            winner=game.winner.to_dict(), 
+            loser=game.loser.to_dict(), 
+            winner_stat=winner_stat.to_dict(), 
+            loser_stat=loser_stat.to_dict() 
+        )
     else:
         return jsonify(result="BILLING NEEDED")
 

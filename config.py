@@ -9,6 +9,7 @@ class BaseConfig(object):
     SQLALCHEMY_DATABASE_URI = os.environ['DATABASE_URL']
     SQLALCHEMY_TRACK_MODIFICATIONS = True
     UPLOAD_FOLDER = os.path.join(basedir, 'uploads')
+    SLACK_SIGNING_SECRET = os.environ['SLACK_SIGNING_SECRET'] if 'SLACK_SIGNING_SECRET' in os.environ else 'SO_SECRET'
 
 
 class TestingConfig(object):

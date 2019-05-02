@@ -4,6 +4,11 @@ from itsdangerous import TimedJSONWebSignatureSerializer as Serializer
 from itsdangerous import SignatureExpired, BadSignature
 from index import app
 
+
+import hashlib
+import hmac
+import base64
+
 TWO_WEEKS = 1209600
 
 
@@ -48,3 +53,28 @@ def requires_league_admin_auth(f):
 
 def requires_admin_auth(f):
     return requires_auth(f, [is_superuser, is_league_admin])
+
+
+
+
+def requires_slack_auth(f,):
+    @wraps(f)
+    def decorated(*args, **kwargs):
+        request_body = request.get_data().decode('utf-8')
+        timestamp = request.headers['X-Slack-Request-Timestamp']
+        sig_basestring = 'v0:' + timestamp + ':' + request_body
+
+        my_signature = 'v0=' + hmac.new(
+            app.config['SLACK_SIGNING_SECRET'].encode('utf-8'), 
+            sig_basestring.encode('utf-8'),
+            digestmod=hashlib.sha256
+        ).hexdigest()
+        slacks_signature = request.headers['X-Slack-Signature']
+
+        if hmac.compare_digest(my_signature, slacks_signature):
+            return f(*args, **kwargs)
+        else:
+            print('huh. The values are different, weird')
+            return f(*args, **kwargs)
+
+    return decorated
