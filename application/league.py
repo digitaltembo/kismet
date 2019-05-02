@@ -55,14 +55,14 @@ def create_league():
 
 @app.route("/api/league/players", methods=["GET"])
 @requires_auth
-def get_leaderboard():
-    my_user = User.query.get(g.current_user["id"])
+def get_leaderboard_json():
+    return jsonify(get_leaderboard(g.current_user["league_id"]))
 
-    users = [merge(user.current_stat.to_dict(), user.to_dict()) for user in my_user.league.users if user.current_stat_id]
-
-    return jsonify(
-        users
-    )
+def get_leaderboard(league_id):
+    return sorted([
+        merge(user.current_stat.to_dict(), user.to_dict()) 
+        for user in User.query.filter_by(league_id=league_id) if user.current_stat_id
+    ], key=lambda user:-user['elo'])
 
 def merge(dictA, dictB):
     newDict = {}

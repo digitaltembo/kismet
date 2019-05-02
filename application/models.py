@@ -19,6 +19,7 @@ class User(db.Model):
     profile_pic = db.Column(db.String(255))
     kfactor = db.Column(db.Integer(), default=28)
     current_stat_id = db.Column(db.Integer(), db.ForeignKey('stat.id'))
+    slack_user_id = db.Column(db.String(20))
 
     league = db.relationship('League', back_populates='users')
     current_stat = db.relationship('Stat', foreign_keys=[current_stat_id])
@@ -28,7 +29,7 @@ class User(db.Model):
     stats = db.relationship('Stat', back_populates='user', foreign_keys='[Stat.user_id]')
 
 
-    def __init__(self, email, password, name, league, is_league_admin=False, is_superuser=False, profile_pic="", ):
+    def __init__(self, email, password, name, league, is_league_admin=False, is_superuser=False, profile_pic=""):
         self.email = email
         self.name = name
         self.password = User.hashed_password(password)
@@ -72,6 +73,7 @@ class League(db.Model):
     current_users = db.Column(db.Integer())
     allowed_monthly_games = db.Column(db.Integer())
     current_monthly_games = db.Column(db.Integer())
+    slack_team_id = db.Column(db.String(20))
 
     users = db.relationship('User', back_populates='league')
     current_season = db.relationship('Season', foreign_keys=[current_season_id])
