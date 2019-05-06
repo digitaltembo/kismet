@@ -20,6 +20,7 @@ class User(db.Model):
     kfactor = db.Column(db.Integer(), default=28)
     current_stat_id = db.Column(db.Integer(), db.ForeignKey('stat.id'))
     slack_user_id = db.Column(db.String(20))
+    is_active = db.Column(db.Boolean(), default=True)
 
     league = db.relationship('League', back_populates='users')
     current_stat = db.relationship('Stat', foreign_keys=[current_stat_id])
@@ -74,6 +75,8 @@ class League(db.Model):
     allowed_monthly_games = db.Column(db.Integer())
     current_monthly_games = db.Column(db.Integer())
     slack_team_id = db.Column(db.String(20))
+    registration_code = db.Column(db.String(10))
+    month_credits = db.Column(db.Integer())
 
     users = db.relationship('User', back_populates='league')
     current_season = db.relationship('Season', foreign_keys=[current_season_id])
@@ -83,13 +86,14 @@ class League(db.Model):
 
 
 
-    def __init__(self, name, month_start, allowed_users, current_users, allowed_monthly_games, current_monthly_games):
+    def __init__(self, name, month_start, allowed_users, current_users, allowed_monthly_games, current_monthly_games, registration_code):
         self.name                  = name
         self.month_start           = month_start
         self.allowed_users         = allowed_users
         self.current_users         = current_users
         self.allowed_monthly_games = allowed_monthly_games
         self.current_monthly_games = current_monthly_games
+        self.registration_code     = registration_code
     def to_dict(self):
         return {
             "id": self.id,
@@ -98,7 +102,9 @@ class League(db.Model):
             "allowed_users": self.allowed_users,
             "current_users": self.current_users,
             "allowed_monthly_games": self.allowed_monthly_games,
-            "current_monthly_games": self.current_monthly_games
+            "current_monthly_games": self.current_monthly_games,
+            "registration_code": self.registration_code,
+            "month_credits": self.month_credits
         }
 
 class Season(db.Model):

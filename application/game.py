@@ -9,20 +9,27 @@ import datetime
 
 @app.route("/api/game/record", methods=["POST"])
 @requires_auth
-def record_game():
+def record_game_request():
     json = request.get_json()
 
-    the_league = League.query.get(g.current_user["league_id"])
+    aid    = int(json["playerA"]["id"])
+    ascore = int(json["playerA"]["score"])
+    bid    = int(json["playerB"]["id"])
+    bscore = int(json["playerB"]["score"])
+
+    result = record_game(g.current_user["league_id"], aid, ascore, bid, bscore)
+    response_code = result["response_code"]
+    return jsonify(result), response_code
+
+def record_game(league_id, aid, ascore, bid, bscore):
+    the_league = League.query.get(league_id)
+
+    userA  = User.query.filter_by(league_id=league_id, id=aid).first()
+    userB  = User.query.filter_by(league_id=league_id, id=bid).first()
+    if not userA or not userB:
+        return {'result': "failed", 'message':"could not find users",'response_code': 400}
 
     if(can_have_another_game(the_league)):
-        aid    = int(json["playerA"]["id"])
-        ascore = int(json["playerA"]["score"])
-        bid    = int(json["playerB"]["id"])
-        bscore = int(json["playerB"]["score"])
-        userA  = User.query.filter_by(league_id=the_league.id, id=aid).first()
-        userB  = User.query.filter_by(league_id=the_league.id, id=bid).first()
-        if not userA or not userB:
-            return jsonify(message="shoot"), 400
         winner = userA if ascore > bscore else userB 
         loser = userB if ascore > bscore else userA
         winner_score, loser_score = (ascore, bscore) if (ascore > bscore) else (bscore, ascore)
@@ -38,16 +45,17 @@ def record_game():
         )
         db.session.commit()
         winner_stat, loser_stat = stat_update(game)
-        return jsonify(
-            result="success", 
-            game=game.to_dict(), 
-            winner=game.winner.to_dict(), 
-            loser=game.loser.to_dict(), 
-            winner_stat=winner_stat.to_dict(), 
-            loser_stat=loser_stat.to_dict() 
-        )
+        return {
+            'result':      "success", 
+            'response_code': 200,
+            'game':        game.to_dict(), 
+            'winner':      game.winner.to_dict(), 
+            'loser':       game.loser.to_dict(), 
+            'winner_stat': winner_stat.to_dict(), 
+            'loser_stat':  loser_stat.to_dict() 
+        }
     else:
-        return jsonify(result="BILLING NEEDED")
+        return {'result': "BILLING NEEDED", 'response_code': 402}
 
 @app.route("/api/game/list", methods=["GET"])
 @requires_auth

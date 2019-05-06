@@ -54,9 +54,7 @@ def requires_league_admin_auth(f):
 def requires_admin_auth(f):
     return requires_auth(f, [is_superuser, is_league_admin])
 
-
-
-
+ 
 def requires_slack_auth(f,):
     @wraps(f)
     def decorated(*args, **kwargs):
@@ -72,9 +70,10 @@ def requires_slack_auth(f,):
         slacks_signature = request.headers['X-Slack-Signature']
 
         if hmac.compare_digest(my_signature, slacks_signature):
+            app.logger.info('Successful log in')
             return f(*args, **kwargs)
         else:
-            print('huh. The values are different, weird')
+            app.logger.info('huh. The values are different, weird')
             return f(*args, **kwargs)
 
     return decorated

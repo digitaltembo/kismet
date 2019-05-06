@@ -34,16 +34,16 @@ def get_user(id):
         return jsonify(result="failure", message="Poorly formed request"), 409
 
 
-@app.route("/api/user/add", methods=["POST"])
-@requires_league_admin_auth
-def add_user():
-    incoming = request.get_json()
-    league = League.query.get(int(g.current_user["league_id"]))
-    (success, result) =  add_user_to_league(email=incoming["email"], name=incoming["name"], league = league)
-    if success:
-        return jsonify(result="success", user=result.to_dict())
-    else:
-        return result
+# @app.route("/api/user/add", methods=["POST"])
+# @requires_league_admin_auth
+# def add_user():
+#     incoming = request.get_json()
+#     league = League.query.get(int(g.current_user["league_id"]))
+#     (success, result) =  add_user_to_league(email=incoming["email"], name=incoming["name"], league = league)
+#     if success:
+#         return jsonify(result="success", user=result.to_dict())
+#     else:
+#         return result
 
 @app.route("/api/user/reset_password", methods=["POST"])
 @requires_league_admin_auth
@@ -56,15 +56,14 @@ def reset_password():
     db.session.commit()
     return jsonify(result="success", user=result.to_dict())
 
-def add_user_to_league(email, name, league):
+def add_user_to_league(email, name, password, league):
     if league.current_users < league.allowed_users:
         user = User(
             email=email,
             name=name,
-            password='',
+            password=password,
             league=league
         )
-        user.password='' #it would be impossible to change this otherwise
         db.session.add(user)
         league.current_users += 1
         init_stat(user)
@@ -81,20 +80,19 @@ def add_user_to_league(email, name, league):
 @app.route("/api/user/register", methods=["POST"])
 def register_user():
     incoming = request.get_json()
-    user = User.query.filter_by(email=incoming["email"], password="").first()
-    if user:
-        user.password = User.hashed_password(incoming["password"])
+    league = League.query.filter_by(registration_code=incoming['registration_code']).first()
+    if league:
+        (success, result) = add_user_to_league(email=incoming['email'], name=incoming['name'], password=incoming['password'], league=league)
 
-        try:
-            db.session.commit()
-        except IntegrityError:
-            return jsonify(message="Cannot add user"), 409
-
-        return jsonify(
-            result="success",
-            id=user.id,
-            token=generate_token(user)
-        )
+         
+        if success:
+            return jsonify(
+                result="success", 
+                id=result.id,
+                token=generate_token(result)
+            )
+        else:
+            return result
     else:
         return jsonify(result="failure", message="You need an invitation to register.")
 
@@ -122,11 +120,7 @@ def is_token_valid():
 @app.route("/api/user/list", methods=["GET"])
 @requires_auth
 def list_users():
-    users = [g.current_user.to_dict()]
-    if g.current_user.is_superuser:
-        users = [user.to_dict() for user in User.query.all()]
-    elif g.current_user.is_league_admin:
-        users = [user.to_dict() for user in User.query.filter(league=user.league)]
+    users = [user.to_dict() for user in User.query.filter(league=user.league, is_active=True)]
 
     return jsonify(
         users
@@ -136,6 +130,7 @@ def list_users():
 @requires_auth
 def update_user():
     incoming = request.get_json(force=True)
+    app.logger.info("UPDATING USER: {}".format(incoming))
     user_id = int(incoming["id"])
     if user_id != g.current_user['id'] and not g.current_user['is_superuser'] and not g.current_user['is_league_admin']:
         return jsonify(result="failure", message="Not Authorized"), 401
@@ -146,7 +141,7 @@ def update_user():
     
     user.email = incoming["email"]
     user.name = incoming["name"]
-    if "password" in incoming and incoming["password"] != None:
+    if "password" in incoming and incoming["password"] != None and incoming["password"] != '':
         user.password = User.hashed_password(incoming["password"])
 
     if g.current_user['is_league_admin'] and "is_league_admin" in incoming and incoming["is_league_admin"] != None:
@@ -160,23 +155,12 @@ def update_user():
 @requires_league_admin_auth
 def delete_user():
     incoming = request.get_json()
-    User.query.filter_by(id=int(request.args.get("id"))).delete()
-    db.session.commit()
-    return jsonify(message="success"), 200
+    user = User.query.filter_by(id=int(request.args.get("id"))).first()
+    if user:
+        user.is_active=False
+        db.session.commit()
+        return jsonify(message="success", user_id=user.id), 200
+    else:
+        return jsonify(message="shucks"), 403
 
-# @app.route("/api/user/approve", methods=["POST"])
-# @requires_league_admin_auth
-# def approve_user():
-#     incoming = request.get_json()
-#     user = ApprovedUser(incoming["email"])
-#     db.session.add(user)
-#     db.session.commit()
-#     return jsonify(user.to_dict()), 200
-
-# @app.route("/api/user/delete-approval", methods=["DELETE"])
-# @requires_league_admin_auth
-# def delete_approval():
-#     ApprovedUser.query.filter_by(email=request.args.get("email")).delete()
-#     db.session.commit()
-#     return jsonify(message="success"), 200
 
