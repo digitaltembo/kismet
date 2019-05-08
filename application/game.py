@@ -43,6 +43,7 @@ def record_game(league_id, aid, ascore, bid, bscore):
             loser_score,
             datetime.datetime.now()
         )
+        the_league.current_monthly_games += 1
         db.session.commit()
         winner_stat, loser_stat = stat_update(game)
         return {

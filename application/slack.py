@@ -7,8 +7,10 @@ import datetime
 import re
 from .league import get_leaderboard
 from .game import record_game
+from .stat import FIRST_PLACE, LAST_PLACE, UNUSUALLY_LOW, UNUSUALLY_HIGH, FINE, get_random_quality
 import json 
 import random
+import requests
 
 from .slack_messages import block_message, sections, section, context, divider, actions, button, simple_message
 
@@ -74,7 +76,7 @@ def slack_command():
     user = User.query.filter_by(league_id=league.id, slack_user_id=slack_user_id).first()
 
     text = request.form['text'].lower()
-    parsers = [parse_as_help, parse_as_sentance, parse_as_simple, parse_as_leaderboard]
+    parsers = [parse_as_help, parse_as_sentance, parse_as_simple, parse_as_leaderboard, parse_as_how, parse_as_who]
 
     for parser in parsers:
         parsed = parser(text, league, user)
@@ -116,6 +118,7 @@ def parse_as_sentance(text, league, user):
 
 simple_regex = re.compile("\<\@([a-z0-9]+)?(?:\|\w+)\>\s*(\d{1,2})\s*\<\@([a-z0-9]+)?(?:\|\w+)\>\s*(\d{1,2})")
 def parse_as_simple(text, league, user):
+    app.logger.info("HEY - " + text)
     match = simple_regex.match(text)
     if match:
         (user1, user1_score, user2, user2_score) = match.groups()
@@ -139,10 +142,65 @@ def parse_as_leaderboard(text, league, user):
         )
 
         ranks = [get_rank_message(i) for i in range(len(top_users))]
-        return jsonify(blocks(
+        return jsonify(block_message(
             "Leaderboard!",
             [section("The current leaderboard:")] + ranks
         ))
+    else:
+        return None
+
+QUALITIES = {
+    FIRST_PLACE : [
+        'You are in first place for {}! Keep up the good work', 
+        'Wow: great job on {}, you are #1', 
+        '#1 #1 #1 !!!! in: {}',
+        '*NO ONE* is better than you at {}'
+    ], 
+    LAST_PLACE : [
+        'You are in last place for {} :( I bet you can do better! Keep trying! And have you considered: sabotaging your enemies?',
+        'Your {} is a wee bit sad and a wee bit worse than everyone elses.',
+        'I would suggest improving your {}, everyone else is better'
+    ], 
+    UNUSUALLY_LOW : [
+        'Well you don\'t have the worst {}, but you *ARE* significantly worse than usual'
+        'I think you could pump up your {} so that you are like, kinda average',
+        'I\'ve seen better {}, and in fact most people _are_ better than you'
+    ], 
+    UNUSUALLY_HIGH : [
+        'Cool {}! It is almost the best!',
+        'u r *SIGNIFICANT*. As in: significantly above the normal distribution in {}'
+    ], 
+    FINE : [
+        'Well I can say this about you: your {} is fine',
+        'You don\'t have the best {}, you don\'t have the worst',
+        'I guess: you have an averagish {}? Congrats on not being worse?',
+        'I mean you *could* improve your {}, but you could also be worse',
+        'Hey! There are _several_ players who have a worse {} than you!! I mean, not all, and really there are a significant number better than you.'
+    ]
+}
+
+def parse_as_how(text, league, user):
+    if text == 'how' or text.startswith('how am i'):
+        algo, ranking = get_random_quality(user)
+        return jsonify(simple_message(random.choice(QUALITIES[ranking]).format(algo)))
+    else:
+        return None
+
+WHOS = [
+    "I think it looks like a good time to challenge {}",
+    "{} is a total sucker, I bet you could *DESTROY* them",
+    "Now I think is a good time to play some ping pong against {}",
+    "You. {}. The Ping Pong Table. Who will win and conquer the hearts of the populace?",
+    "I know for a fact that {} is free right now. If they say otherwise, it's just because of cowardice",
+    "It is my earnest wish that you challenge {}",
+    "After much consideration I believe a competition between you and {} would be optimal"
+]
+
+def parse_as_who(text, league, user):
+    if text == 'who' or text.startswith('who should'):
+        challenger = random.choice([u.name for u in league.users if u.id != user.id])
+        challenge = random.choice(WHOS)
+        return jsonify(simple_message(challenge.format(challenger)))
     else:
         return None
 
@@ -154,7 +212,12 @@ def get_user(league, slack_id):
         return False, jsonify({"text":"Hey so uh I don't know this person"})
 
 
-defeated_words = ['demolished', 'beat', 'beat', 'beat', 'crushed', 'vanquished', 'defeated', 'bodied', 'outplayed', 'trounced', 'overwhelmed', 'pummeled']
+defeated_words = [
+    '*demolished*', 'beat', 'beat', 'beat', 
+    '*crushed*', '*vanquished*', 'defeated', '*bodied*', 
+    '*outplayed*', '*trounced*', '*overwhelmed*', 
+    '*pummeled*'
+]
 
 def confirm_recorded_game(league, user1_slack_id, user1_score, user2_slack_id, user2_score):
     success1, result1 = get_user(league, user1_slack_id)
@@ -176,26 +239,28 @@ def confirm_recorded_game(league, user1_slack_id, user1_score, user2_slack_id, u
                 )
             ),
             actions(
-                button(
-                    "Yeah",
-                    GAME_ACTION, 
-                    {
-                        "league_id": league.id,
-                        "user1_id": result1.id,
-                        "user1_slack_id": user1_slack_id,
-                        "user1_score": user1_score,
-                        "user2_id": result2.id,
-                        "user2_score": user2_score,
-                        "user2_slack_id": user2_slack_id
-                    },
-                    "primary"
-                ),
-                button(
-                    "Nah",
-                    REJECT_ACTION,
-                    {},
-                    "danger"
-                )
+                [
+                    button(
+                        "Yeah",
+                        GAME_ACTION, 
+                        {
+                            "league_id": league.id,
+                            "user1_id": result1.id,
+                            "user1_slack_id": user1_slack_id,
+                            "user1_score": user1_score,
+                            "user2_id": result2.id,
+                            "user2_score": user2_score,
+                            "user2_slack_id": user2_slack_id
+                        },
+                        "primary"
+                    ),
+                    button(
+                        "Nah",
+                        REJECT_ACTION,
+                        {},
+                        "danger"
+                    )
+                ]
             )
         ]
     ))
@@ -210,7 +275,6 @@ def confirm_recorded_game(league, user1_slack_id, user1_score, user2_slack_id, u
 @app.route("/api/slack/interaction", methods=["POST"])
 @requires_slack_auth
 def slack_interaction():
-    app.logger.info('here')
     slack_payload = json.loads(request.form['payload'])
     response_url = slack_payload['response_url']
     action = slack_payload['actions'][0]
@@ -223,13 +287,7 @@ def slack_interaction():
 def record_game_from_action(response_url, data):
     result =  record_game(data['league_id'], data['user1_id'], data['user1_score'], data['user2_id'], data['user2_score'])
     # result = {'winner':{'name':'Nolan'}, 'loser':{'name':'everyone'}, 'winner_stat':{'elo':'infinity'}, 'loser_stat':{'elo':'not as high'},'game':{'winner_score':21,'loser_score'}}
-    app.logger.log('record game({},{},{},{},{})'.format(
-        data['league_id'], 
-        ata['user1_id'], 
-        data['user1_score'], 
-        data['user2_id'], 
-        data['user2_score']
-    ))
+
     send_slack_message(response_url, block_message(
         'Match Recorded',
         [
@@ -249,7 +307,8 @@ def record_game_from_action(response_url, data):
                 ":question: Get help at any time with `/kismet help`, and remember this is " +
                 "all accessible on our website, pong.by.nolanhawk.in"
             )
-        ]
+        ],
+        reply_all=True
     ))
 
 def send_slack_message(request_url, json):

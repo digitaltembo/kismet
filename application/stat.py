@@ -1,10 +1,11 @@
 from flask import request, render_template, jsonify, url_for, redirect, g
-from .models import Stat, User, Game
+from .models import Stat, User, Game, League
 from index import app, db
 from sqlalchemy.exc import IntegrityError
 from .utils.auth import requires_auth, requires_admin_auth
 import datetime
-
+import random
+import math
 # input: {"playerA": Int, "playerB": Int}, ELO scores for playerA and playerB
 # returns: {"playerA": {"win-probability":float, "win-delta": int, "lose-delta": int}, "playerB": {...}}, Probability that playerA wins
 @app.route("/api/stat/simulate", methods=["GET"])
@@ -125,3 +126,57 @@ def init_stat(user):
 def list_stats():
     stats = Stat.query.filter_by(league_id=g.current_user["league_id"]).all()
     return jsonify([stat.to_dict() for stat in stats]), 200
+
+@app.route("/api/stat/overview/<int:id>", methods=["GET"])
+def get_overview(id):
+    return jsonify(overview(id))
+
+ranking_algorithms = {
+    "Elo": lambda stat: stat.elo,
+    "games played": lambda stat: stat.wins + stat.losses,
+    "points scored": lambda stat: stat.total_points,
+    "recency of play": lambda stat: (stat.time - datetime.datetime.now()).seconds,
+    "win-loss ratio": lambda stat: stat.wins/stat.losses if stat.losses > 0 else 100000000
+}
+def sq(num):
+    return num * num
+
+
+FIRST_PLACE = 'FIRST'
+LAST_PLACE = 'LAST'
+UNUSUALLY_LOW = 'LOW'
+UNUSUALLY_HIGH = 'HIGH'
+FINE = 'FINE'
+
+def get_ranks_and_avgs_for_algo(algo, stat, stats):
+    total = len(stats)
+    metric = sorted([algo(s) for s in stats])
+    avg = sum(metric) / total
+    std_deviation = math.sqrt(sum([ sq(value - avg) for value in metric ]) / total)
+    my_value = algo(stat)
+    my_deviance = abs(my_value - avg)
+
+    rank = total - metric.index(my_value)
+    if rank == 1:
+        return FIRST_PLACE
+    if rank == total:
+        return LAST_PLACE 
+    if my_deviance > std_deviation:
+        if my_value < avg:
+            return UNUSUALLY_LOW
+        else:
+            return UNUSUALLY_HIGH
+
+    return FINE
+
+def get_random_quality(user):
+    current_stat =  user.current_stat
+    competitors = User.query.filter_by(league_id=user.league_id, is_active=True).all()
+    competitor_stats = [competitor.current_stat for competitor in competitors]
+    ranking = random.choice(list(ranking_algorithms.keys()))
+    return ranking, get_ranks_and_avgs_for_algo(ranking_algorithms[ranking], current_stat, competitor_stats)
+
+
+
+
+

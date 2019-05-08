@@ -1,15 +1,16 @@
 # Helper functions for constructing messages for Slack to digest and send
-
+import json
 
 def simple_message(text):
     return {
         "text": text 
     }
 
-def block_message(text, blocks):
+def block_message(text, blocks, reply_all=False):
     return {
         "text": text,
-        "blocks": blocks 
+        "blocks": blocks,
+        "response_type": "in_channel" if reply_all else "ephemeral"
     }
 
 def section(text):
