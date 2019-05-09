@@ -71,39 +71,7 @@ export function get_league(token) {
   return axios.get('/api/my/league', tokenConfig(token));
 }
 
-
-export function get_book_authors(token) {
-  return axios.get('/api/book/list/authors', tokenConfig(token));
-}
-export function get_book_genres(token) {
-  return axios.get('/api/book/list/genres', tokenConfig(token));
-}
-export function get_book_series(token) {
-  return axios.get('/api/book/list/series', tokenConfig(token));
-}
-export function get_book_countries(token) {
-  return axios.get('/api/book/list/countries', tokenConfig(token));
-}
-export function get_book_languages(token) {
-  return axios.get('/api/book/list/languages', tokenConfig(token));
-}
-export function get_book_original_languages(token) {
-  return axios.get('/api/book/list/original_languages', tokenConfig(token));
-}
-export function get_movies(token) {
-  return axios.get('/api/movie/list', tokenConfig(token));
-}
-
-export function get_users(token) {
-  return axios.get('/api/user/list', tokenConfig(token));
-}
 export function delete_user(token, user) {
   return axios.delete('/api/user/delete', {params:{id:user.id}, ...tokenConfig(token)});
 }
 
-export function approve_user(token, user) {
-  return axios.post('/api/user/approve', user, tokenConfig(token));
-}
-export function remove_user_approval(token, user) {
-  return axios.delete('/api/user/delete-approval', {params:{email:user.email}, ...tokenConfig(token)});
-}

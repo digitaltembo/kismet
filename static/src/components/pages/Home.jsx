@@ -1,6 +1,6 @@
 import React from 'react';
 
-export const Home = () =>
+const Home = () =>
   <section>
     <div className="container text-center">
       <h1>Kismet.js</h1>
@@ -19,3 +19,5 @@ export const Home = () =>
     </div>
 
   </section>;
+
+export default Home;
