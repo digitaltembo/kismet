@@ -34,7 +34,7 @@ function mapDispatchToProps(dispatch) {
   return bindActionCreators(actionCreators, dispatch);
 }
 
- @connect(mapStateToProps, mapDispatchToProps)
+@connect(mapStateToProps, mapDispatchToProps)
 export default class Leaderboard extends React.Component { // eslint-disable-line react/prefer-stateless-function
   constructor() {
     super();

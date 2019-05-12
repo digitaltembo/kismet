@@ -35,7 +35,7 @@ const Player = ({player, rank}) => {
         <p>Rank: {rank}</p>
         <p>ELO: {player.elo}</p>
         <p>Win/Loss ratio: {player.wins}:{player.losses}</p>
-        <p>Avg points per game: {player.total_points / (player.wins + player.losses)}</p>
+        <p>Avg points per game: { (player.total_points / (player.wins + player.losses)).toFixed(1) }</p>
       </CardText>
     </Card>
   );
@@ -284,14 +284,14 @@ export default class Record extends React.Component { // eslint-disable-line rea
                           <TableRowColumn>{Math.round(simulationResult[1].winProbability * 100)}%</TableRowColumn>
                         </TableRow>
                         <TableRow>
-                          <TableRowColumn>Points for Win</TableRowColumn>
+                          <TableRowColumn>If {playerA.name} wins</TableRowColumn>
                           <TableRowColumn>+{simulationResult[0].winDelta.toFixed(1)}</TableRowColumn>
-                          <TableRowColumn>+{simulationResult[1].winDelta.toFixed(1)}</TableRowColumn>
+                          <TableRowColumn>{simulationResult[1].loseDelta.toFixed(1)}</TableRowColumn>
                         </TableRow>
                         <TableRow>
-                          <TableRowColumn>Points for Loss</TableRowColumn>
+                          <TableRowColumn>If {playerB.name} wins</TableRowColumn>
                           <TableRowColumn>{simulationResult[0].loseDelta.toFixed(1)}</TableRowColumn>
-                          <TableRowColumn>{simulationResult[1].loseDelta.toFixed(1)}</TableRowColumn>
+                          <TableRowColumn>+{simulationResult[1].winDelta.toFixed(1)}</TableRowColumn>
                         </TableRow>
                       </TableBody>
                     </Table>
