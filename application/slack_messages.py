@@ -6,11 +6,20 @@ def simple_message(text):
         "text": text 
     }
 
-def block_message(text, blocks, reply_all=False):
+def block_message(text, blocks):
     return {
         "text": text,
-        "blocks": blocks,
-        "response_type": "in_channel" if reply_all else "ephemeral"
+        "blocks": blocks
+    }
+
+def columns(column_a, column_b):
+    field_text = []
+    for i in range(max(len(column_a), len(column_b))):
+        field_text.append( column_a[i] if i < len(column_a) else " ")
+        field_text.append( column_b[i] if i < len(column_b) else " ")
+    return {
+        "type": "section",
+        "fields": [{"type":"mrkdwn","text":text} for text in field_text]
     }
 
 def section(text):

@@ -120,6 +120,10 @@ def init_stat(user):
     db.session.add(user)
     db.session.commit()
 
+def rank_and_elo(user):
+    current_elo = user.current_stat.elo
+    return (User.query.join(User.current_stat).filter_by(league_id=user.league_id).filter( Stat.elo >= current_elo).count(), current_elo)
+
 
 @app.route("/api/stat/list", methods=["GET"])
 @requires_auth

@@ -75,6 +75,7 @@ class League(db.Model):
     allowed_monthly_games = db.Column(db.Integer())
     current_monthly_games = db.Column(db.Integer())
     slack_team_id = db.Column(db.String(20))
+    slack_webhook = db.Column(db.String(128))
     registration_code = db.Column(db.String(10))
     month_credits = db.Column(db.Integer())
 

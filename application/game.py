@@ -4,7 +4,7 @@ from index import app, db
 from sqlalchemy.exc import IntegrityError
 from .utils.auth import requires_auth, requires_admin_auth
 from .league import can_have_another_game
-from .stat import stat_update
+from .stat import stat_update,rank_and_elo
 import datetime
 
 @app.route("/api/game/record", methods=["POST"])
@@ -22,6 +22,8 @@ def record_game_request():
     return jsonify(result), response_code
 
 def record_game(league_id, aid, ascore, bid, bscore):
+
+    from .slack import send_game_result
     the_league = League.query.get(league_id)
 
     userA  = User.query.filter_by(league_id=league_id, id=aid).first()
@@ -46,6 +48,11 @@ def record_game(league_id, aid, ascore, bid, bscore):
         the_league.current_monthly_games += 1
         db.session.commit()
         winner_stat, loser_stat = stat_update(game)
+        winner_rank, winner_elo = rank_and_elo(winner)
+        loser_rank, loser_elo = rank_and_elo(loser)
+
+        send_game_result(the_league, winner.name, winner_score, winner_rank, winner_elo, loser.name, loser_score, loser_rank, loser_elo)
+
         return {
             'result':      "success", 
             'response_code': 200,

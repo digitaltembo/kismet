@@ -12,7 +12,7 @@ import json
 import random
 import requests
 
-from .slack_messages import block_message, sections, section, context, divider, actions, button, simple_message
+from .slack_messages import block_message, sections, section, context, divider, actions, button, simple_message, columns
 
 # action types that are passed to the interaction endpoint
 GAME_ACTION = 'game'
@@ -282,34 +282,44 @@ def slack_interaction():
 
     if value['type'] == GAME_ACTION:
         record_game_from_action(response_url, value['payload'])
+    elif value['type'] == REJECT_ACTION:
+        do_other_thing(response_url)
     return '', 200
 
 def record_game_from_action(response_url, data):
-    result =  record_game(data['league_id'], data['user1_id'], data['user1_score'], data['user2_id'], data['user2_score'])
+    record_game(data['league_id'], data['user1_id'], data['user1_score'], data['user2_id'], data['user2_score'])
     # result = {'winner':{'name':'Nolan'}, 'loser':{'name':'everyone'}, 'winner_stat':{'elo':'infinity'}, 'loser_stat':{'elo':'not as high'},'game':{'winner_score':21,'loser_score'}}
 
-    send_slack_message(response_url, block_message(
-        'Match Recorded',
-        [
-            divider(),
-            section(
-                "*Match Recorded!* :table_tennis_paddle_and_ball: :scream_cat: " +
-                "{} *{}* {} {} to {} :scream_cat: :table_tennis_paddle_and_ball:".format(
-                    result['winner']['name'],
-                    result['loser']['name'],
-                    random.choice(defeated_words),
-                    result['game']['winner_score'],
-                    result['game']['loser_score']
+
+def send_game_result(league, winner_name, winner_score, winner_rank, winner_elo, loser_name, loser_score, loser_rank, loser_elo):
+    if league.slack_webhook:
+        send_slack_message(league.slack_webhook, block_message(
+            'Match Recorded',
+            [
+                divider(),
+                section(
+                    "*Match Recorded!* :table_tennis_paddle_and_ball: :scream_cat: " +
+                    "{} {} {} {} to {} :scream_cat: :table_tennis_paddle_and_ball:".format(
+                        winner_name,
+                        random.choice(defeated_words),
+                        loser_name,
+                        winner_score,
+                        loser_score
+                    )
+                ),
+                divider(),
+                columns(
+                    [":arrow_up: {} ({}), Rank #{}".format(winner_name, int(winner_elo), winner_rank)],
+                    [":arrow_down: {} ({}), Rank #{}".format(loser_name, int(loser_elo), loser_rank)]
+                ),
+                context(
+                    ":question: See more details <https://pong.by.nolanhawk.in/leaderboard|on the website>" 
                 )
-            ),
-            divider(),
-            context(
-                ":question: Get help at any time with `/kismet help`, and remember this is " +
-                "all accessible on our website, pong.by.nolanhawk.in"
-            )
-        ],
-        reply_all=True
-    ))
+            ]
+        ))
+
+def do_other_thing(response_url):
+    send_slack_message(response_url, block_message('Cool', [section('This is a test pls ignore')]))
 
 def send_slack_message(request_url, json):
     r = requests.post(request_url, json=json)
